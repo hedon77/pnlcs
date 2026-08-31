@@ -40,12 +40,12 @@ class XadesSigner
 
         $signature = $doc->createElementNS(self::NS_DSIG, 'ds:Signature');
         $signature->setAttribute('Id', 'Signature');
-        $signature->setAttributeNS(self::XMLNS, 'xmlns:xades', self::NS_XADES);
 
         // QualifyingProperties is built first so its digest can be referenced.
         [$qualifyingProperties, $signedProperties] = $this->qualifyingProperties($doc, $cert);
 
         $signedInfo = $doc->createElementNS(self::NS_DSIG, 'ds:SignedInfo');
+        $signedInfo->setAttributeNS(self::XMLNS, 'xmlns:ds', self::NS_DSIG);
 
         $canonicalization = $doc->createElementNS(self::NS_DSIG, 'ds:CanonicalizationMethod');
         $canonicalization->setAttribute('Algorithm', self::C14N);
@@ -176,9 +176,12 @@ class XadesSigner
     {
         $qp = $doc->createElementNS(self::NS_XADES, 'xades:QualifyingProperties');
         $qp->setAttribute('Target', '#Signature');
+        $qp->setAttributeNS(self::XMLNS, 'xmlns:xades', self::NS_XADES);
 
         $signedProps = $doc->createElementNS(self::NS_XADES, 'xades:SignedProperties');
         $signedProps->setAttribute('Id', 'SignedProperties');
+        $signedProps->setAttributeNS(self::XMLNS, 'xmlns:xades', self::NS_XADES);
+        $signedProps->setAttributeNS(self::XMLNS, 'xmlns:ds', self::NS_DSIG);
 
         $signedSigProps = $doc->createElementNS(self::NS_XADES, 'xades:SignedSignatureProperties');
 
