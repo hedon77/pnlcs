@@ -19,14 +19,23 @@ class Crypto
      */
     public static function rsaOaepSha256(string $data, string $publicKeyPem): string
     {
-        // Accept either a certificate or a bare public key and normalise to a
-        // PEM public key (the openssl CLI needs "BEGIN PUBLIC KEY").
-        $key = openssl_pkey_get_public($publicKeyPem);
+        // The KSeF API returns the certificate as base64 DER (no PEM headers).
+        // Normalise to a PEM certificate before extracting the public key.
+        $pem = $publicKeyPem;
+        if (! str_contains($pem, '-----BEGIN')) {
+            $pem = "-----BEGIN CERTIFICATE-----\n".chunk_split($pem, 64, "\n")."-----END CERTIFICATE-----\n";
+        }
+
+        $key = openssl_pkey_get_public($pem);
         if ($key === false) {
-            throw new \RuntimeException(__('messages.ksef.encrypt_failed'));
+            throw new \RuntimeException(__('messages.ksef.encrypt_failed').' (public key parse: '.openssl_error_string().')');
         }
         $details = openssl_pkey_get_details($key);
         $pubPem = (string) ($details['key'] ?? '');
+
+        if ($pubPem === '') {
+            throw new \RuntimeException(__('messages.ksef.encrypt_failed').' (empty public key PEM)');
+        }
 
         $dir = storage_path('app/ksef');
         if (! is_dir($dir)) {
@@ -73,7 +82,7 @@ class Crypto
         $encrypted = openssl_encrypt($data, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
 
         if ($encrypted === false) {
-            throw new \RuntimeException(__('messages.ksef.encrypt_failed'));
+            throw new \RuntimeException(__('messages.ksef.encrypt_failed').' (AES: '.openssl_error_string().')');
         }
 
         return $encrypted;

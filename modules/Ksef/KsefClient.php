@@ -117,7 +117,7 @@ class KsefClient
             // Open an online session.
             [$key, $iv, $encryptedKey, $publicKeyId] = $this->sessionCredentials($endpoint, $accessToken, $settings);
 
-            $session = Http::withToken($accessToken)
+            $sessionResponse = Http::withToken($accessToken)
                 ->accept('application/json')
                 ->timeout((int) $settings['http']['request_timeout'])
                 ->connectTimeout((int) $settings['http']['connect_timeout'])
@@ -132,20 +132,24 @@ class KsefClient
                         'initializationVector' => base64_encode($iv),
                         'publicKeyId' => $publicKeyId,
                     ],
-                ])
-                ->throw()
-                ->json();
+                ]);
+
+            if (! $sessionResponse->successful()) {
+                return ['success' => false, 'request_xml' => $requestXml, 'message' => 'Session open: '.(string) $sessionResponse->body()];
+            }
+
+            $session = $sessionResponse->json();
 
             $sessionRef = (string) ($session['referenceNumber'] ?? '');
 
             if ($sessionRef === '') {
-                return ['success' => false, 'request_xml' => $requestXml, 'message' => __('messages.ksef.session_failed')];
+                return ['success' => false, 'request_xml' => $requestXml, 'message' => __('messages.ksef.session_failed').': '.json_encode($session)];
             }
 
             // Encrypt the invoice and send it.
             $encrypted = Crypto::aes256Cbc($requestXml, $key, $iv);
 
-            $send = Http::withToken($accessToken)
+            $sendResponse = Http::withToken($accessToken)
                 ->accept('application/json')
                 ->timeout((int) $settings['http']['request_timeout'])
                 ->connectTimeout((int) $settings['http']['connect_timeout'])
@@ -156,9 +160,13 @@ class KsefClient
                     'encryptedInvoiceSize' => strlen($encrypted),
                     'encryptedInvoiceContent' => base64_encode($encrypted),
                     'offlineMode' => false,
-                ])
-                ->throw()
-                ->json();
+                ]);
+
+            if (! $sendResponse->successful()) {
+                return ['success' => false, 'request_xml' => $requestXml, 'message' => 'Invoice send: '.(string) $sendResponse->body()];
+            }
+
+            $send = $sendResponse->json();
 
             $invoiceRef = (string) ($send['referenceNumber'] ?? '');
 
