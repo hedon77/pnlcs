@@ -4,16 +4,23 @@ return [
     // Operator's NIP (TIN) — the taxpayer whose invoices are sent.
     'nip' => null,
 
-    // KSeF environment: 'demo' or 'prod'.
-    'environment' => 'demo',
+    // KSeF 2.0 environment: 'integration', 'demo' or 'prod'.
+    //   - integration: anonymised test data, no legal effect.
+    //   - demo:        pre-production, real auth (MCU), no legal effect.
+    //   - prod:        production, real invoices.
+    'environment' => 'integration',
 
-    // API endpoints. The demo/test environment is the official MF test box.
+    // KSeF 2.0 API endpoints. Verify the exact hosts against the official
+    // OpenAPI contract (ksef.podatki.gov.pl → wsparcie dla integratorów).
     'endpoints' => [
+        'integration' => 'https://ksef-test.mf.gov.pl/api',
         'demo' => 'https://ksef-demo.mf.gov.pl/api',
         'prod' => 'https://ksef.mf.gov.pl/api',
     ],
 
-    // Token / key material used to authenticate with KSeF.
+    // KSeF 2.0 authenticates with a certificate issued by the MCU module
+    // (qualified electronic seal/signature), NOT the KSeF 1.0 token. The
+    // client signs requests with the private key below.
     'token' => null,
     'key_path' => null,
     'cert_path' => null,

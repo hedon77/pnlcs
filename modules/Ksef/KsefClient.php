@@ -8,13 +8,19 @@ use Illuminate\Support\Facades\Http;
 use Modules\Ksef\Support\InvoiceXmlBuilder;
 
 /**
- * Thin HTTP client for the KSeF API.
+ * HTTP client for the KSeF 2.0 API.
  *
- * The production KSeF flow is: InitSession (challenge/response against the
- * token) → SendInvoice (base64 FA XML) → GetSessionStatus (the UPO). The
- * submit() method here performs that exchange against the configured
- * environment. The endpoints and auth are the official MF API; wire the real
- * certificate/key material in the addon settings before going live.
+ * KSeF 2.0 authenticates with a certificate issued by the MCU module
+ * (qualified electronic seal / signature), not the KSeF 1.0 token. The flow
+ * is a challenge/response exchange:
+ *
+ *   1. AuthorisationChallenge  →  get a challenge + timestamp
+ *   2. sign challenge|timestamp with the private key (RSA-SHA256)
+ *   3. AuthorisationToken      →  exchange the signature for a session token
+ *   4. Invoice/Send            →  send the FA XML with the session token
+ *
+ * Endpoints are configurable per environment; verify the exact hosts and
+ * field names against the official OpenAPI contract (ksef.podatki.gov.pl).
  */
 class KsefClient
 {
@@ -29,18 +35,17 @@ class KsefClient
     {
         $settings = KsefSettings::resolve();
 
-        if (! filled($settings['nip']) || ! filled($settings['token'])) {
-            return ['success' => false, 'message' => __('messages.ksef.missing_token')];
+        if (! $this->hasCredentials($settings)) {
+            return ['success' => false, 'message' => __('messages.ksef.missing_credentials')];
         }
 
         try {
             $endpoint = rtrim((string) $settings['endpoint'], '/');
 
-            $response = Http::withToken((string) $settings['token'])
-                ->accept('application/json')
+            $response = Http::accept('application/json')
                 ->timeout((int) $settings['http']['request_timeout'])
                 ->connectTimeout((int) $settings['http']['connect_timeout'])
-                ->get($endpoint.'/online/Session/Status');
+                ->get($endpoint.'/api/status');
 
             if ($response->successful()) {
                 return ['success' => true, 'message' => __('messages.ksef.test_ok')];
@@ -61,19 +66,27 @@ class KsefClient
 
         $requestXml = $this->xml->build($invoice, (string) $settings['nip']);
 
-        // A configured-but-unreachable environment must fail loudly rather than
-        // silently mark the invoice as sent.
-        if (! filled($settings['token'])) {
+        if (! $this->hasCredentials($settings)) {
             return [
                 'success' => false,
                 'request_xml' => $requestXml,
-                'message' => __('messages.ksef.missing_token'),
+                'message' => __('messages.ksef.missing_credentials'),
+            ];
+        }
+
+        try {
+            $token = $this->authenticate($settings);
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'request_xml' => $requestXml,
+                'message' => $e->getMessage(),
             ];
         }
 
         $endpoint = rtrim((string) $settings['endpoint'], '/');
 
-        $response = Http::withToken((string) $settings['token'])
+        $response = Http::withHeader('SessionToken', $token)
             ->accept('application/json')
             ->timeout((int) $settings['http']['request_timeout'])
             ->connectTimeout((int) $settings['http']['connect_timeout'])
@@ -91,10 +104,8 @@ class KsefClient
             ];
         }
 
-        // The KSeF reference comes back in the response body; the exact field
-        // depends on the API version. This is the happy-path mapping.
         $data = $response->json() ?? [];
-        $ksefNumber = (string) ($data['referenceNumber'] ?? $data['ksefReferenceNumber'] ?? '');
+        $ksefNumber = (string) ($data['referenceNumber'] ?? $data['ksefReferenceNumber'] ?? $data['elementReferenceNumber'] ?? '');
 
         return [
             'success' => true,
@@ -106,5 +117,78 @@ class KsefClient
             'response_xml' => $responseXml,
             'message' => __('messages.ksef.sent'),
         ];
+    }
+
+    /**
+     * KSeF 2.0 challenge/response authentication.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    protected function authenticate(array $settings): string
+    {
+        $endpoint = rtrim((string) $settings['endpoint'], '/');
+        $nip = (string) $settings['nip'];
+        $key = $this->privateKey($settings);
+
+        $context = ['contextIdentifier' => ['type' => 'onip', 'identifier' => $nip]];
+
+        // 1. Challenge.
+        $challenge = Http::accept('application/json')
+            ->timeout((int) $settings['http']['request_timeout'])
+            ->connectTimeout((int) $settings['http']['connect_timeout'])
+            ->post($endpoint.'/online/Session/AuthorisationChallenge', $context)
+            ->throw()
+            ->json();
+
+        $challengeValue = (string) ($challenge['challenge'] ?? '');
+        $timestamp = (string) ($challenge['timestamp'] ?? '');
+
+        // 2. Sign the challenge with the qualified seal's private key.
+        $dataToSign = $challengeValue.'|'.$timestamp;
+        $signature = '';
+        if (! openssl_sign($dataToSign, $signature, $key, OPENSSL_ALGO_SHA256)) {
+            throw new \RuntimeException(__('messages.ksef.sign_failed'));
+        }
+
+        // 3. Exchange the signature for a session token.
+        $token = Http::accept('application/json')
+            ->timeout((int) $settings['http']['request_timeout'])
+            ->connectTimeout((int) $settings['http']['connect_timeout'])
+            ->post($endpoint.'/online/Session/AuthorisationToken', $context + [
+                'challenge' => $challengeValue,
+                'timestamp' => $timestamp,
+                'signature' => base64_encode($signature),
+            ])
+            ->throw()
+            ->json();
+
+        return (string) ($token['sessionToken']['token'] ?? $token['token'] ?? '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $settings
+     */
+    protected function privateKey(array $settings): \OpenSSLAsymmetricKey|string
+    {
+        $path = (string) ($settings['key_path'] ?? '');
+
+        if ($path === '' || ! is_file($path)) {
+            throw new \RuntimeException(__('messages.ksef.missing_key'));
+        }
+
+        $key = openssl_pkey_get_private((string) file_get_contents($path));
+        if ($key === false) {
+            throw new \RuntimeException(__('messages.ksef.invalid_key'));
+        }
+
+        return $key;
+    }
+
+    /**
+     * @param  array<string, mixed>  $settings
+     */
+    protected function hasCredentials(array $settings): bool
+    {
+        return filled($settings['nip'] ?? null) && filled($settings['key_path'] ?? null);
     }
 }
