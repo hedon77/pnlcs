@@ -446,6 +446,8 @@ return [
     'ksef.private_key_passphrase' => 'Private key passphrase',
     'ksef.private_key_passphrase_hint' => 'If the key is passphrase-protected, enter the passphrase here. Leave blank for an unencrypted key.',
     'ksef.key_passphrase' => 'The key is passphrase-protected — provide the correct private key passphrase.',
+    'ksef.certificate' => 'Certificate (PEM)',
+    'ksef.certificate_hint' => 'Paste the certificate (PEM) of the qualified seal/signature from MCU. Stored encrypted.',
     'ksef.cert_path' => 'Certificate path',
     'ksef.cert_path_hint' => 'Path to the certificate (optional).',
     'ksef.connect_timeout' => 'Connect timeout (seconds)',
