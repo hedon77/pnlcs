@@ -52,14 +52,18 @@ class KsefClient
         );
 
         // 3. Submit the signed XML.
-        $init = Http::accept('application/json')
+        $initResponse = Http::accept('application/json')
             ->contentType('application/xml')
             ->timeout((int) $settings['http']['request_timeout'])
             ->connectTimeout((int) $settings['http']['connect_timeout'])
             ->withBody($signed, 'application/xml')
-            ->post($endpoint.'/auth/xades-signature')
-            ->throw()
-            ->json();
+            ->post($endpoint.'/auth/xades-signature');
+
+        if (! $initResponse->successful()) {
+            throw new \RuntimeException('KSeF auth rejected: '.(string) $initResponse->body());
+        }
+
+        $init = $initResponse->json();
 
         $referenceNumber = (string) ($init['referenceNumber'] ?? '');
         $authenticationToken = (string) ($init['authenticationToken']['token'] ?? '');
