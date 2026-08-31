@@ -19,6 +19,15 @@ class Crypto
      */
     public static function rsaOaepSha256(string $data, string $publicKeyPem): string
     {
+        // Accept either a certificate or a bare public key and normalise to a
+        // PEM public key (the openssl CLI needs "BEGIN PUBLIC KEY").
+        $key = openssl_pkey_get_public($publicKeyPem);
+        if ($key === false) {
+            throw new \RuntimeException(__('messages.ksef.encrypt_failed'));
+        }
+        $details = openssl_pkey_get_details($key);
+        $pubPem = (string) ($details['key'] ?? '');
+
         $dir = storage_path('app/ksef');
         if (! is_dir($dir)) {
             mkdir($dir, 0700, true);
@@ -28,12 +37,12 @@ class Crypto
         $in = tempnam($dir, 'in');
         $out = tempnam($dir, 'out');
 
-        file_put_contents($pub, $publicKeyPem);
+        file_put_contents($pub, $pubPem);
         file_put_contents($in, $data);
         @chmod($in, 0600);
 
         $cmd = sprintf(
-            'openssl pkeyutl -encrypt -pubin -inkey %s -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256 -in %s -out %s 2>/dev/null',
+            'openssl pkeyutl -encrypt -pubin -inkey %s -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256 -in %s -out %s 2>&1',
             escapeshellarg($pub),
             escapeshellarg($in),
             escapeshellarg($out),
@@ -42,12 +51,13 @@ class Crypto
         exec($cmd, $output, $code);
 
         $result = ($code === 0 && is_file($out)) ? (string) file_get_contents($out) : '';
+        $error = implode("\n", $output);
 
         @unlink($in);
         @unlink($out);
 
         if ($code !== 0 || $result === '') {
-            throw new \RuntimeException(__('messages.ksef.encrypt_failed'));
+            throw new \RuntimeException(__('messages.ksef.encrypt_failed').($error !== '' ? ' ('.$error.')' : ''));
         }
 
         return $result;
