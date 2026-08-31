@@ -4,6 +4,7 @@ namespace Modules\Ksef;
 
 use App\Models\Invoice;
 use App\Models\KsefInvoice;
+use App\Models\ModuleLog;
 use App\Services\AddonManager;
 use Illuminate\Support\Facades\Log;
 
@@ -81,6 +82,8 @@ class KsefService
                     'error_message' => null,
                 ]);
 
+                $this->logAction('submit', ['invoice_id' => $record->invoice_id], ['success' => true, 'ksef_number' => $result['ksef_number'] ?? null]);
+
                 return ['success' => true, 'message' => $result['message'] ?? 'Sent'];
             }
 
@@ -90,6 +93,8 @@ class KsefService
                 'request_xml' => $result['request_xml'] ?? null,
                 'response_xml' => $result['response_xml'] ?? null,
             ]);
+
+            $this->logAction('submit', ['invoice_id' => $record->invoice_id], ['success' => false, 'error' => $result['message'] ?? null]);
 
             return ['success' => false, 'message' => $result['message'] ?? 'Unknown error'];
         } catch (\Throwable $e) {
@@ -102,6 +107,8 @@ class KsefService
                 'status' => 'error',
                 'error_message' => $e->getMessage(),
             ]);
+
+            $this->logAction('submit', ['invoice_id' => $record->invoice_id], ['success' => false, 'error' => $e->getMessage()]);
 
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -129,5 +136,22 @@ class KsefService
         $original->update(['status' => 'corrected']);
 
         return $record->fresh();
+    }
+
+    /**
+     * Write a KSeF action to the module log viewer (System Logs).
+     */
+    public function logAction(string $action, array $request = [], array|string|null $response = null): void
+    {
+        try {
+            ModuleLog::create([
+                'module' => 'KSeF',
+                'action' => $action,
+                'request' => json_encode($request, JSON_UNESCAPED_SLASHES),
+                'response' => is_string($response) ? $response : json_encode($response, JSON_UNESCAPED_SLASHES),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('KSeF module log failed: '.$e->getMessage());
+        }
     }
 }

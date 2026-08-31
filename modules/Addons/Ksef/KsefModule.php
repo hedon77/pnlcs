@@ -53,15 +53,23 @@ class KsefModule implements AddonModuleInterface
 
     public function output(Request $request): string
     {
+        $html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+            .'<p style="font-size:13px;color:var(--pn-muted);margin:0;">'.__('messages.ksef.addon_output_hint').'</p>'
+            .'<form method="POST" action="'.route('admin.ksef.test').'" style="margin:0;">'
+            .'<input type="hidden" name="_token" value="'.csrf_token().'">'
+            .'<button type="submit" class="btn btn-sm btn-outline" style="font-size:12px;padding:4px 12px;">'.__('messages.ksef.test').'</button>'
+            .'</form>'
+            .'</div>';
+
         $records = KsefInvoice::with(['invoice.client', 'correction'])
             ->orderByDesc('id')
             ->paginate(20);
 
         if ($records->isEmpty()) {
-            return '<p style="color:var(--pn-muted);font-size:13px;">'.__('messages.ksef.none_yet').'</p>';
+            return $html.'<p style="color:var(--pn-muted);font-size:13px;">'.__('messages.ksef.none_yet').'</p>';
         }
 
-        $html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+        $html .= '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
         $html .= '<tr>'
             .'<th style="padding:8px;text-align:left;color:var(--pn-muted);border-bottom:1px solid var(--border);">'.__('messages.ksef.invoice').'</th>'
             .'<th style="padding:8px;text-align:left;color:var(--pn-muted);border-bottom:1px solid var(--border);">'.__('messages.ksef.client').'</th>'

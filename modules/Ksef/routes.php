@@ -7,6 +7,7 @@ Route::middleware(['admin.auth', 'admin.2fa', 'admin.permission:manage_invoices'
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::post('ksef/test', [KsefController::class, 'test'])->name('ksef.test');
         Route::post('ksef/invoices/{record}/resend', [KsefController::class, 'resend'])->name('ksef.resend');
         Route::post('ksef/invoices/{record}/mark-corrected', [KsefController::class, 'markCorrected'])->name('ksef.mark-corrected');
     });

@@ -448,4 +448,7 @@ return [
     'ksef.missing_token' => 'Brak tokenu KSeF — skonfiguruj poświadczenia API w ustawieniach dodatku.',
     'ksef.http_error' => 'Błąd HTTP z KSeF (:code).',
     'ksef.sent' => 'Faktura przekazana do KSeF.',
+    'ksef.test' => 'Test połączenia',
+    'ksef.test_ok' => 'Połączenie z API KSeF działa.',
+    'ksef.addon_output_hint' => 'Opłacone faktury są automatycznie przekazywane do KSeF. Poniżej status wysyłek.',
 ];

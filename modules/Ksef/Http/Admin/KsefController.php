@@ -4,11 +4,29 @@ namespace Modules\Ksef\Http\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\KsefInvoice;
+use Modules\Ksef\KsefClient;
 use Modules\Ksef\KsefService;
 
 class KsefController extends Controller
 {
-    public function __construct(protected KsefService $service) {}
+    public function __construct(
+        protected KsefService $service,
+        protected KsefClient $client,
+    ) {}
+
+    /**
+     * Test the connection to the KSeF API.
+     */
+    public function test()
+    {
+        $result = $this->client->testConnection();
+        $this->service->logAction('test', [], $result);
+
+        return back()->with(
+            $result['success'] ? 'success' : 'error',
+            'KSeF: '.$result['message'],
+        );
+    }
 
     /**
      * Re-submit a failed or pending invoice to KSeF.

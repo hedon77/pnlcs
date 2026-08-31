@@ -448,4 +448,7 @@ return [
     'ksef.missing_token' => 'KSeF token missing — configure the API credentials in the addon settings.',
     'ksef.http_error' => 'HTTP error from KSeF (:code).',
     'ksef.sent' => 'Invoice handed to KSeF.',
+    'ksef.test' => 'Test connection',
+    'ksef.test_ok' => 'Connection to the KSeF API works.',
+    'ksef.addon_output_hint' => 'Paid invoices are handed to KSeF automatically. Below is the submission status.',
 ];

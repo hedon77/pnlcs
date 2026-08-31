@@ -21,6 +21,38 @@ class KsefClient
     public function __construct(protected InvoiceXmlBuilder $xml) {}
 
     /**
+     * Lightweight connectivity check against the configured KSeF endpoint.
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function testConnection(): array
+    {
+        $settings = KsefSettings::resolve();
+
+        if (! filled($settings['nip']) || ! filled($settings['token'])) {
+            return ['success' => false, 'message' => __('messages.ksef.missing_token')];
+        }
+
+        try {
+            $endpoint = rtrim((string) $settings['endpoint'], '/');
+
+            $response = Http::withToken((string) $settings['token'])
+                ->accept('application/json')
+                ->timeout((int) $settings['http']['request_timeout'])
+                ->connectTimeout((int) $settings['http']['connect_timeout'])
+                ->get($endpoint.'/online/Session/Status');
+
+            if ($response->successful()) {
+                return ['success' => true, 'message' => __('messages.ksef.test_ok')];
+            }
+
+            return ['success' => false, 'message' => __('messages.ksef.http_error', ['code' => $response->status()])];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
      * @return array{success: bool, status?: string, ksef_number?: string, accepted?: bool, sent_at?: string, request_xml?: string, response_xml?: string, message?: string}
      */
     public function submit(Invoice $invoice, KsefInvoice $record): array
