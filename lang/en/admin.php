@@ -1235,6 +1235,7 @@ return [
     'invoices.gateway' => 'Gateway',
     'invoices.invoice_cancelled' => 'Invoice Cancelled',
     'invoices.invoice_date' => 'Invoice Date',
+    'invoices.source_proforma' => 'Refers to proforma',
     'invoices.invoice_details' => 'Invoice Details',
     'invoices.invoice_hash' => 'Invoice #',
     'invoices.line_items' => 'Line Items',
