@@ -84,6 +84,7 @@ class KsefClient
 
         $response = Http::withHeader('SessionToken', $token)
             ->accept('application/json')
+            ->withOptions($this->tlsOptions($settings))
             ->timeout((int) $settings['http']['request_timeout'])
             ->connectTimeout((int) $settings['http']['connect_timeout'])
             ->withBody(base64_encode($requestXml), 'application/octet-stream')
@@ -128,8 +129,11 @@ class KsefClient
 
         $context = ['contextIdentifier' => ['type' => 'onip', 'identifier' => $nip]];
 
+        $options = $this->tlsOptions($settings);
+
         // 1. Challenge.
         $challenge = Http::accept('application/json')
+            ->withOptions($options)
             ->timeout((int) $settings['http']['request_timeout'])
             ->connectTimeout((int) $settings['http']['connect_timeout'])
             ->post($endpoint.'/online/Session/AuthorisationChallenge', $context)
@@ -148,6 +152,7 @@ class KsefClient
 
         // 3. Exchange the signature for a session token.
         $token = Http::accept('application/json')
+            ->withOptions($options)
             ->timeout((int) $settings['http']['request_timeout'])
             ->connectTimeout((int) $settings['http']['connect_timeout'])
             ->post($endpoint.'/online/Session/AuthorisationToken', $context + [
@@ -207,5 +212,42 @@ class KsefClient
     protected function hasCredentials(array $settings): bool
     {
         return filled($settings['nip'] ?? null) && filled($settings['private_key'] ?? null);
+    }
+
+    /**
+     * Guzzle options for the mutual-TLS handshake KSeF 2.0 requires.
+     *
+     * The pasted certificate and key are written to a private directory and
+     * handed to Guzzle as file paths (Guzzle needs files, not strings). The
+     * files are rewritten per request so a settings change takes effect at
+     * once.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return array<string, mixed>
+     */
+    protected function tlsOptions(array $settings): array
+    {
+        $dir = storage_path('app/ksef');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0700, true);
+        }
+
+        $keyPath = $dir.'/client_key.pem';
+        file_put_contents($keyPath, (string) ($settings['private_key'] ?? ''));
+        @chmod($keyPath, 0600);
+
+        $options = ['ssl_key' => $keyPath];
+
+        if (filled($settings['private_key_passphrase'] ?? null)) {
+            $options['ssl_key_passphrase'] = (string) $settings['private_key_passphrase'];
+        }
+
+        if (filled($settings['certificate'] ?? null)) {
+            $certPath = $dir.'/client_cert.pem';
+            file_put_contents($certPath, (string) $settings['certificate']);
+            $options['cert'] = $certPath;
+        }
+
+        return $options;
     }
 }
