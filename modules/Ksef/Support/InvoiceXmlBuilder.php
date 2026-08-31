@@ -80,10 +80,12 @@ class InvoiceXmlBuilder
 
         $address = '';
         $country = (string) ($invoice->buyer('country') ?: 'PL');
-        $addr1 = (string) ($invoice->buyer('address1') ?: '');
-        $city = (string) ($invoice->buyer('city') ?: '');
-        $postcode = (string) ($invoice->buyer('postcode') ?: '');
-        $line = trim($addr1.' '.$postcode.' '.$city);
+        $parts = array_filter([
+            trim((string) ($invoice->buyer('address1') ?: '')),
+            trim((string) ($invoice->buyer('postcode') ?: '')),
+            trim((string) ($invoice->buyer('city') ?: '')),
+        ]);
+        $line = implode(' ', $parts);
         if ($line !== '') {
             $address = '<Adres><KodKraju>'.e($country).'</KodKraju><AdresL1>'.e($line).'</AdresL1></Adres>';
         }
@@ -228,8 +230,11 @@ class InvoiceXmlBuilder
     private function sellerAddress(): string
     {
         try {
-            $line = trim((string) Setting::get('Address1', ''))
-                .' '.trim((string) Setting::get('Address2', ''));
+            $parts = array_filter([
+                trim((string) Setting::get('Address1', '')),
+                trim((string) Setting::get('Address2', '')),
+            ]);
+            $line = implode(' ', $parts);
         } catch (\Throwable) {
             $line = '';
         }
