@@ -9,6 +9,7 @@ class KsefInvoice extends Model
 {
     protected $fillable = [
         'invoice_id',
+        'session_reference',
         'status',
         'ksef_number',
         'corrected_by_invoice_id',

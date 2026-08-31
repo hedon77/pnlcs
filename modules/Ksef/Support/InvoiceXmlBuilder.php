@@ -111,7 +111,7 @@ class InvoiceXmlBuilder
             : '';
 
         return '<?xml version="1.0" encoding="UTF-8"?>'
-            .'<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+            .'<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/" kodSystemowy="FA (2)" wersjaSchemy="1-0E">'
             .'<Naglowek>'
             .'<KodFormularza>FA2</KodFormularza>'
             .'<WariantFormularza>2</WariantFormularza>'

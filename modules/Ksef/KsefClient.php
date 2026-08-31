@@ -170,15 +170,21 @@ class KsefClient
 
             $invoiceRef = (string) ($send['referenceNumber'] ?? '');
 
+            // Poll the invoice status to get the acceptance result and the
+            // KSeF number (processing is asynchronous).
+            $status = $this->pollInvoice($endpoint, $accessToken, $sessionRef, $invoiceRef, $settings);
+
             return [
                 'success' => true,
-                'status' => 'sent',
-                'ksef_number' => $invoiceRef ?: null,
-                'accepted' => false,
+                'session_reference' => $sessionRef,
+                'status' => $status['status'] ?? 'sent',
+                'ksef_number' => $status['ksef_number'] ?? $invoiceRef,
+                'accepted' => ($status['status'] ?? '') === 'accepted',
                 'sent_at' => now()->toDateTimeString(),
                 'request_xml' => $requestXml,
                 'response_xml' => json_encode($send),
-                'message' => __('messages.ksef.sent'),
+                'message' => $status['message'] ?? __('messages.ksef.sent'),
+                'error_message' => $status['error'] ?? null,
             ];
         } catch (\Throwable $e) {
             return [
@@ -247,6 +253,50 @@ class KsefClient
         }
 
         throw new \RuntimeException(__('messages.ksef.auth_timeout'));
+    }
+
+    /**
+     * Poll an invoice's status until it is accepted or rejected.
+     *
+     * @return array{status: string, ksef_number?: ?string, message?: string, error?: ?string}
+     */
+    protected function pollInvoice(string $endpoint, string $token, string $sessionRef, string $invoiceRef, array $settings): array
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $r = Http::withToken($token)
+                ->accept('application/json')
+                ->timeout((int) $settings['http']['request_timeout'])
+                ->connectTimeout((int) $settings['http']['connect_timeout'])
+                ->get($endpoint."/sessions/{$sessionRef}/invoices/{$invoiceRef}");
+
+            if ($r->successful()) {
+                $data = $r->json();
+                $status = $data['status'] ?? [];
+                $code = (int) ($status['code'] ?? 0);
+
+                if ($code === 200) {
+                    return [
+                        'status' => 'accepted',
+                        'ksef_number' => $data['ksefNumber'] ?? null,
+                        'message' => __('messages.ksef.sent'),
+                    ];
+                }
+
+                if ($code >= 400) {
+                    $description = (string) ($status['description'] ?? '');
+                    $details = implode('; ', (array) ($status['details'] ?? []));
+
+                    return [
+                        'status' => 'error',
+                        'error' => $description.($details !== '' ? ': '.$details : ''),
+                    ];
+                }
+            }
+
+            sleep(2);
+        }
+
+        return ['status' => 'sent', 'message' => __('messages.ksef.sent')];
     }
 
     /**

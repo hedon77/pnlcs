@@ -74,16 +74,17 @@ class KsefService
 
             if ($result['success'] ?? false) {
                 $record->update([
+                    'session_reference' => $result['session_reference'] ?? null,
                     'status' => $result['status'] ?? 'sent',
                     'ksef_number' => $result['ksef_number'] ?? null,
                     'sent_at' => $result['sent_at'] ?? now(),
                     'accepted_at' => $result['accepted'] ? now() : null,
                     'request_xml' => $result['request_xml'] ?? null,
                     'response_xml' => $result['response_xml'] ?? null,
-                    'error_message' => null,
+                    'error_message' => $result['error_message'] ?? null,
                 ]);
 
-                $this->logAction('submit', ['invoice_id' => $record->invoice_id], ['success' => true, 'ksef_number' => $result['ksef_number'] ?? null]);
+                $this->logAction('submit', ['invoice_id' => $record->invoice_id], ['success' => true, 'status' => $result['status'] ?? 'sent', 'ksef_number' => $result['ksef_number'] ?? null, 'error' => $result['error_message'] ?? null]);
 
                 return ['success' => true, 'message' => $result['message'] ?? 'Sent'];
             }
