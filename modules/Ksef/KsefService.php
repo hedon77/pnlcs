@@ -7,6 +7,7 @@ use App\Models\KsefInvoice;
 use App\Models\ModuleLog;
 use App\Services\AddonManager;
 use Illuminate\Support\Facades\Log;
+use Modules\Ksef\Jobs\SubmitInvoiceJob;
 
 /**
  * Business logic for the KSeF addon: decides which invoices go to KSeF and
@@ -52,9 +53,9 @@ class KsefService
             ['status' => 'pending'],
         );
 
-        // Hand the invoice to KSeF straight away; a failure stays visible in
-        // the KSeF screen for a manual retry.
-        $this->send($record);
+        // Hand the invoice to KSeF in the background: the external API must
+        // never block the payment request. The scheduler picks the job up.
+        SubmitInvoiceJob::dispatch($record->id);
 
         return $record->fresh();
     }

@@ -4,6 +4,7 @@ namespace Modules\Ksef\Http\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\KsefInvoice;
+use Modules\Ksef\Jobs\SubmitInvoiceJob;
 use Modules\Ksef\KsefClient;
 use Modules\Ksef\KsefService;
 
@@ -34,12 +35,9 @@ class KsefController extends Controller
     public function resend(KsefInvoice $record)
     {
         $record->update(['status' => 'pending', 'error_message' => null]);
-        $result = $this->service->send($record);
+        SubmitInvoiceJob::dispatch($record->id);
 
-        return back()->with(
-            $result['success'] ? 'success' : 'error',
-            $result['message'],
-        );
+        return back()->with('success', __('messages.ksef.queued'));
     }
 
     /**

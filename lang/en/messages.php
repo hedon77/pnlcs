@@ -451,4 +451,5 @@ return [
     'ksef.test' => 'Test connection',
     'ksef.test_ok' => 'Connection to the KSeF API works.',
     'ksef.addon_output_hint' => 'Paid invoices are handed to KSeF automatically. Below is the submission status.',
+    'ksef.queued' => 'The invoice has been queued for KSeF submission.',
 ];

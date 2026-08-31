@@ -451,4 +451,5 @@ return [
     'ksef.test' => 'Test połączenia',
     'ksef.test_ok' => 'Połączenie z API KSeF działa.',
     'ksef.addon_output_hint' => 'Opłacone faktury są automatycznie przekazywane do KSeF. Poniżej status wysyłek.',
+    'ksef.queued' => 'Faktura została zakolejkowana do wysyłki do KSeF.',
 ];
