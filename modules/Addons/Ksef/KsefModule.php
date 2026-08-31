@@ -57,7 +57,7 @@ class KsefModule implements AddonModuleInterface
             .'<p style="font-size:13px;color:var(--pn-muted);margin:0;">'.__('messages.ksef.addon_output_hint').'</p>'
             .'<form method="POST" action="'.route('admin.ksef.test').'" style="margin:0;">'
             .'<input type="hidden" name="_token" value="'.csrf_token().'">'
-            .'<button type="submit" class="btn btn-sm btn-outline" style="font-size:12px;padding:4px 12px;">'.__('messages.ksef.test').'</button>'
+            .'<button type="submit" class="btn btn-success btn-sm" style="font-size:13px;padding:6px 14px;font-weight:600;">'.__('messages.ksef.test').'</button>'
             .'</form>'
             .'</div>';
 

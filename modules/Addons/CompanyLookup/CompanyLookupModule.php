@@ -64,7 +64,7 @@ class CompanyLookupModule implements AddonModuleInterface
         $testButton = function (string $provider): string {
             return '<form method="POST" action="'.route('admin.config.addons.modules.company-lookup.test', $provider).'" style="margin:0;">'
                 .'<input type="hidden" name="_token" value="'.csrf_token().'">'
-                .'<button type="submit" class="btn btn-sm btn-outline" style="font-size:12px;padding:3px 10px;">'.__('messages.company_lookup.test').'</button>'
+                .'<button type="submit" class="btn btn-success btn-sm" style="font-size:12px;padding:4px 12px;font-weight:600;">'.__('messages.company_lookup.test').'</button>'
                 .'</form>';
         };
 
