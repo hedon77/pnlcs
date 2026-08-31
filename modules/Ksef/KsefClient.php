@@ -236,11 +236,14 @@ class KsefClient
         file_put_contents($keyPath, (string) ($settings['private_key'] ?? ''));
         @chmod($keyPath, 0600);
 
-        $options = ['ssl_key' => $keyPath];
-
+        // Guzzle takes the passphrase as the second element of the ssl_key
+        // array (a separate ssl_key_passphrase option does not exist).
+        $key = $keyPath;
         if (filled($settings['private_key_passphrase'] ?? null)) {
-            $options['ssl_key_passphrase'] = (string) $settings['private_key_passphrase'];
+            $key = [$keyPath, (string) $settings['private_key_passphrase']];
         }
+
+        $options = ['ssl_key' => $key];
 
         if (filled($settings['certificate'] ?? null)) {
             $certPath = $dir.'/client_cert.pem';
