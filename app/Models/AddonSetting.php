@@ -27,7 +27,11 @@ class AddonSetting extends Model
     public static function getForAddon(string $addon): array
     {
         try {
-            return static::where('addon', $addon)->pluck('value', 'setting')->toArray();
+            // get() (not pluck) so the EncryptedValue cast runs: the values are
+            // encrypted at rest and must be decrypted before use.
+            return static::where('addon', $addon)->get()
+                ->pluck('value', 'setting')
+                ->toArray();
         } catch (\Throwable) {
             // Table not migrated yet (install/migrate) — nothing to read.
             return [];

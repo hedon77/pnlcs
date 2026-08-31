@@ -170,13 +170,24 @@ class KsefClient
      */
     protected function privateKey(array $settings): \OpenSSLAsymmetricKey|string
     {
-        $path = (string) ($settings['key_path'] ?? '');
+        $value = (string) ($settings['private_key'] ?? '');
 
-        if ($path === '' || ! is_file($path)) {
+        if ($value === '') {
+            throw new \RuntimeException(__('messages.ksef.missing_credentials'));
+        }
+
+        // The setting holds the PEM text pasted into the addon config. If it
+        // is not PEM, fall back to treating it as a file path on the server.
+        $pem = str_contains($value, '-----BEGIN') ? $value : null;
+        if ($pem === null && is_file($value)) {
+            $pem = (string) file_get_contents($value);
+        }
+
+        if ($pem === null || $pem === '') {
             throw new \RuntimeException(__('messages.ksef.missing_key'));
         }
 
-        $key = openssl_pkey_get_private((string) file_get_contents($path));
+        $key = openssl_pkey_get_private($pem);
         if ($key === false) {
             throw new \RuntimeException(__('messages.ksef.invalid_key'));
         }
@@ -189,6 +200,6 @@ class KsefClient
      */
     protected function hasCredentials(array $settings): bool
     {
-        return filled($settings['nip'] ?? null) && filled($settings['key_path'] ?? null);
+        return filled($settings['nip'] ?? null) && filled($settings['private_key'] ?? null);
     }
 }

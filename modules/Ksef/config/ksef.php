@@ -19,10 +19,10 @@ return [
     ],
 
     // KSeF 2.0 authenticates with a certificate issued by the MCU module
-    // (qualified electronic seal/signature), NOT the KSeF 1.0 token. The
-    // client signs requests with the private key below.
-    'token' => null,
-    'key_path' => null,
+    // (qualified electronic seal / signature), NOT the KSeF 1.0 token. The
+    // private key is pasted into the addon settings (stored encrypted) and is
+    // used to sign the authorisation challenge.
+    'private_key' => null,
     'cert_path' => null,
 
     // HTTP tuning.

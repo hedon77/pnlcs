@@ -24,7 +24,7 @@ final class KsefSettings
         return [
             ['name' => 'nip', 'label' => __('messages.ksef.nip'), 'type' => 'text', 'hint' => __('messages.ksef.nip_hint')],
             ['name' => 'environment', 'label' => __('messages.ksef.environment'), 'type' => 'select', 'options' => ['integration' => 'Integracja', 'demo' => 'Demo', 'prod' => 'Prod'], 'default' => $d['environment']],
-            ['name' => 'key_path', 'label' => __('messages.ksef.key_path'), 'type' => 'text', 'hint' => __('messages.ksef.key_path_hint')],
+            ['name' => 'private_key', 'label' => __('messages.ksef.private_key'), 'type' => 'textarea', 'hint' => __('messages.ksef.private_key_hint')],
             ['name' => 'cert_path', 'label' => __('messages.ksef.cert_path'), 'type' => 'text', 'hint' => __('messages.ksef.cert_path_hint')],
             ['name' => 'connect_timeout', 'label' => __('messages.ksef.connect_timeout'), 'type' => 'text', 'default' => $d['http']['connect_timeout']],
             ['name' => 'request_timeout', 'label' => __('messages.ksef.request_timeout'), 'type' => 'text', 'default' => $d['http']['request_timeout']],
@@ -42,7 +42,7 @@ final class KsefSettings
         return [
             'nip' => self::pick($stored, 'nip', $defaults['nip']),
             'environment' => self::pick($stored, 'environment', $defaults['environment']),
-            'key_path' => self::pick($stored, 'key_path', $defaults['key_path']),
+            'private_key' => self::pick($stored, 'private_key', $defaults['private_key']),
             'cert_path' => self::pick($stored, 'cert_path', $defaults['cert_path']),
             'endpoint' => self::endpoint(self::pick($stored, 'environment', $defaults['environment'])),
             'http' => [
@@ -59,7 +59,7 @@ final class KsefSettings
     {
         $s = self::resolve();
 
-        return filled($s['nip']) && filled($s['key_path']);
+        return filled($s['nip']) && filled($s['private_key']);
     }
 
     private static function endpoint(string $environment): string
