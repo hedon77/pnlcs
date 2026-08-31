@@ -9,10 +9,9 @@ use DOMXPath;
 /**
  * Produces an enveloped XAdES-BES signature for the KSeF 2.0 AuthTokenRequest.
  *
- * PHP's DOM C14N() provides inclusive XML canonicalization, which is one of the
- * transforms KSeF accepts. The signature is RSA-SHA256 over the canonicalized
- * SignedInfo; the certificate is embedded in KeyInfo and referenced from the
- * SigningCertificate qualifying property.
+ * Supports both RSA and ECDSA signing keys: the certificate public-key type is
+ * detected and the matching SignatureMethod is emitted. ECDSA signatures are
+ * converted from DER to the raw R||S encoding XMLDSIG expects.
  */
 class XadesSigner
 {
@@ -21,7 +20,9 @@ class XadesSigner
     private const C14N = 'http://www.w3.org/2001/10/xml-exc-c14n#';
     private const SHA256 = 'http://www.w3.org/2001/04/xmlenc#sha256';
     private const RSA_SHA256 = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256';
+    private const ECDSA_SHA256 = 'http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256';
     private const ENVELOPED = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
+    private const XMLNS = 'http://www.w3.org/2000/xmlns/';
 
     /**
      * Sign an AuthTokenRequest XML document with XAdES-BES.
@@ -39,19 +40,21 @@ class XadesSigner
 
         $signature = $doc->createElementNS(self::NS_DSIG, 'ds:Signature');
         $signature->setAttribute('Id', 'Signature');
+        $signature->setAttributeNS(self::XMLNS, 'xmlns:xades', self::NS_XADES);
 
         // QualifyingProperties is built first so its digest can be referenced.
         [$qualifyingProperties, $signedProperties] = $this->qualifyingProperties($doc, $cert);
 
         $signedInfo = $doc->createElementNS(self::NS_DSIG, 'ds:SignedInfo');
-        $signedInfo->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:ds', self::NS_DSIG);
 
         $canonicalization = $doc->createElementNS(self::NS_DSIG, 'ds:CanonicalizationMethod');
         $canonicalization->setAttribute('Algorithm', self::C14N);
         $signedInfo->appendChild($canonicalization);
 
+        $signatureMethodAlg = $this->signatureMethod($key);
+
         $signatureMethod = $doc->createElementNS(self::NS_DSIG, 'ds:SignatureMethod');
-        $signatureMethod->setAttribute('Algorithm', self::RSA_SHA256);
+        $signatureMethod->setAttribute('Algorithm', $signatureMethodAlg);
         $signedInfo->appendChild($signatureMethod);
 
         // Root reference (URI="") — enveloped, digest over the whole document
@@ -59,21 +62,20 @@ class XadesSigner
         $signedInfo->appendChild($this->reference($doc, '', [
             self::ENVELOPED,
             self::C14N,
-        ], $this->digestOfDocumentWithoutSignature($root, $signature)));
+        ], $this->digestOfDocument($root)));
 
         // SignedProperties reference.
         $signedInfo->appendChild($this->reference($doc, '#SignedProperties', [
             self::C14N,
-        ], $this->digestOfNode($signedProperties)));
+        ], $this->digestOfDetached($signedProperties)));
 
         $signature->appendChild($signedInfo);
 
-        // Canonicalize SignedInfo and sign it.
+        // Re-sign now that the SignedInfo is complete with its digest values.
         $signedInfoC14n = $signedInfo->C14N(true, false);
-        openssl_sign($signedInfoC14n, $signatureValue, $key, OPENSSL_ALGO_SHA256);
-
+        openssl_sign($signedInfoC14n, $raw, $key, OPENSSL_ALGO_SHA256);
         $sigValue = $doc->createElementNS(self::NS_DSIG, 'ds:SignatureValue');
-        $sigValue->nodeValue = base64_encode($signatureValue);
+        $sigValue->nodeValue = base64_encode($this->formatSignature($raw, $key));
         $signature->appendChild($sigValue);
 
         // KeyInfo with the X.509 certificate.
@@ -124,7 +126,52 @@ class XadesSigner
         return $key;
     }
 
-    /** @return array{0: DOMElement, 1: DOMElement} [QualifyingProperties, SignedProperties] */
+    /** Whether the key is an EC key (vs RSA). */
+    private function isEc(\OpenSSLAsymmetricKey|string $key): bool
+    {
+        $details = openssl_pkey_get_details($key);
+
+        return ($details['type'] ?? null) === OPENSSL_KEYTYPE_EC;
+    }
+
+    /** Convert a DER ECDSA signature to raw R||S (fixed 32-byte fields). */
+    private function formatSignature(string $raw, \OpenSSLAsymmetricKey|string $key): string
+    {
+        if (! $this->isEc($key)) {
+            return $raw;
+        }
+
+        // DER SEQUENCE { INTEGER r, INTEGER s }
+        $i = 1; // skip 0x30
+        $len = ord($raw[$i++]);
+        if ($len & 0x80) {
+            $n = $len & 0x7f;
+            $len = 0;
+            while ($n--) {
+                $len = ($len << 8) | ord($raw[$i++]);
+            }
+        }
+
+        $i++; // skip 0x02
+        $lenR = ord($raw[$i++]);
+        $r = substr($raw, $i, $lenR);
+        $i += $lenR;
+
+        $i++; // skip 0x02
+        $lenS = ord($raw[$i++]);
+        $s = substr($raw, $i, $lenS);
+
+        $r = str_pad(ltrim($r, "\x00"), 32, "\x00", STR_PAD_LEFT);
+        $s = str_pad(ltrim($s, "\x00"), 32, "\x00", STR_PAD_LEFT);
+
+        return $r.$s;
+    }
+
+    private function signatureMethod(\OpenSSLAsymmetricKey|string $key): string
+    {
+        return $this->isEc($key) ? self::ECDSA_SHA256 : self::RSA_SHA256;
+    }
+
     private function qualifyingProperties(DOMDocument $doc, array $cert): array
     {
         $qp = $doc->createElementNS(self::NS_XADES, 'xades:QualifyingProperties');
@@ -132,8 +179,6 @@ class XadesSigner
 
         $signedProps = $doc->createElementNS(self::NS_XADES, 'xades:SignedProperties');
         $signedProps->setAttribute('Id', 'SignedProperties');
-        $signedProps->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xades', self::NS_XADES);
-        $signedProps->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:ds', self::NS_DSIG);
 
         $signedSigProps = $doc->createElementNS(self::NS_XADES, 'xades:SignedSignatureProperties');
 
@@ -193,27 +238,19 @@ class XadesSigner
         return $ref;
     }
 
-    /**
-     * Digest of the document root, excluding the (not yet appended) Signature
-     * element — this is the enveloped-signature transform applied by hand.
-     */
-    private function digestOfDocumentWithoutSignature(DOMElement $root, DOMElement $signature): string
+    /** Digest of the document root (Signature not yet appended). */
+    private function digestOfDocument(DOMElement $root): string
     {
-        $clone = $root->ownerDocument->cloneNode(true);
-        $xpath = new DOMXPath($clone);
-        $xpath->registerNamespace('ds', self::NS_DSIG);
-        $nodes = $xpath->query('//ds:Signature');
-        foreach ($nodes as $node) {
-            $node->parentNode->removeChild($node);
-        }
-        $c14n = $clone->documentElement->C14N(true, false);
-
-        return base64_encode(hash('sha256', $c14n, true));
+        return base64_encode(hash('sha256', $root->C14N(true, false), true));
     }
 
-    private function digestOfNode(DOMElement $node): string
+    /** Digest of a detached element (re-parented into a temp document for C14N). */
+    private function digestOfDetached(DOMElement $node): string
     {
-        return base64_encode(hash('sha256', $node->C14N(true, false), true));
+        $temp = new DOMDocument();
+        $temp->appendChild($temp->importNode($node, true));
+
+        return base64_encode(hash('sha256', $temp->documentElement->C14N(true, false), true));
     }
 
     private function formatDn(array $issuer): string
