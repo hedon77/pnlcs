@@ -183,8 +183,18 @@ class KsefClient
             throw new \RuntimeException(__('messages.ksef.missing_key'));
         }
 
-        $key = openssl_pkey_get_private($pem);
+        $passphrase = (string) ($settings['private_key_passphrase'] ?? '');
+        $key = $passphrase !== ''
+            ? openssl_pkey_get_private($pem, $passphrase)
+            : openssl_pkey_get_private($pem);
+
         if ($key === false) {
+            // An encrypted key without (or with a wrong) passphrase is the
+            // most common failure, so say so specifically.
+            if (str_contains($pem, 'ENCRYPTED')) {
+                throw new \RuntimeException(__('messages.ksef.key_passphrase'));
+            }
+
             throw new \RuntimeException(__('messages.ksef.invalid_key'));
         }
 

@@ -23,6 +23,7 @@ return [
     // private key and certificate are pasted into the addon settings (stored
     // encrypted); the key signs the authorisation challenge.
     'private_key' => null,
+    'private_key_passphrase' => null,
     'certificate' => null,
 
     // HTTP tuning.

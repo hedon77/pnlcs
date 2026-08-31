@@ -25,6 +25,7 @@ final class KsefSettings
             ['name' => 'nip', 'label' => __('messages.ksef.nip'), 'type' => 'text', 'hint' => __('messages.ksef.nip_hint')],
             ['name' => 'environment', 'label' => __('messages.ksef.environment'), 'type' => 'select', 'options' => ['integration' => 'Integracja', 'demo' => 'Demo', 'prod' => 'Prod'], 'default' => $d['environment']],
             ['name' => 'private_key', 'label' => __('messages.ksef.private_key'), 'type' => 'textarea', 'hint' => __('messages.ksef.private_key_hint')],
+            ['name' => 'private_key_passphrase', 'label' => __('messages.ksef.private_key_passphrase'), 'type' => 'password', 'hint' => __('messages.ksef.private_key_passphrase_hint')],
             ['name' => 'certificate', 'label' => __('messages.ksef.certificate'), 'type' => 'textarea', 'hint' => __('messages.ksef.certificate_hint')],
             ['name' => 'connect_timeout', 'label' => __('messages.ksef.connect_timeout'), 'type' => 'text', 'default' => $d['http']['connect_timeout']],
             ['name' => 'request_timeout', 'label' => __('messages.ksef.request_timeout'), 'type' => 'text', 'default' => $d['http']['request_timeout']],
@@ -43,6 +44,7 @@ final class KsefSettings
             'nip' => self::pick($stored, 'nip', $defaults['nip']),
             'environment' => self::pick($stored, 'environment', $defaults['environment']),
             'private_key' => self::pick($stored, 'private_key', $defaults['private_key']),
+            'private_key_passphrase' => self::pick($stored, 'private_key_passphrase', $defaults['private_key_passphrase']),
             'certificate' => self::pick($stored, 'certificate', $defaults['certificate']),
             'endpoint' => self::endpoint(self::pick($stored, 'environment', $defaults['environment'])),
             'http' => [
