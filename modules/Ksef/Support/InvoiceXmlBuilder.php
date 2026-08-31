@@ -117,7 +117,10 @@ class InvoiceXmlBuilder
     {
         $due = ($invoice->due_date ?? now())->format('Y-m-d');
 
-        return '<Platnosc><FormaPlatnosci>6</FormaPlatnosci><TerminPlatnosci>'.$due.'</TerminPlatnosci></Platnosc>';
+        return '<Platnosc>'
+            .'<TerminPlatnosci><Termin>'.$due.'</Termin></TerminPlatnosci>'
+            .'<FormaPlatnosci>6</FormaPlatnosci>'
+            .'</Platnosc>';
     }
 
     /**
