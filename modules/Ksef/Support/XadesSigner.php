@@ -18,7 +18,7 @@ class XadesSigner
 {
     private const NS_DSIG = 'http://www.w3.org/2000/09/xmldsig#';
     private const NS_XADES = 'http://uri.etsi.org/01903/v1.3.2#';
-    private const C14N = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315';
+    private const C14N = 'http://www.w3.org/2001/10/xml-exc-c14n#';
     private const SHA256 = 'http://www.w3.org/2001/04/xmlenc#sha256';
     private const RSA_SHA256 = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256';
     private const ENVELOPED = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
@@ -44,6 +44,7 @@ class XadesSigner
         [$qualifyingProperties, $signedProperties] = $this->qualifyingProperties($doc, $cert);
 
         $signedInfo = $doc->createElementNS(self::NS_DSIG, 'ds:SignedInfo');
+        $signedInfo->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:ds', self::NS_DSIG);
 
         $canonicalization = $doc->createElementNS(self::NS_DSIG, 'ds:CanonicalizationMethod');
         $canonicalization->setAttribute('Algorithm', self::C14N);
@@ -68,7 +69,7 @@ class XadesSigner
         $signature->appendChild($signedInfo);
 
         // Canonicalize SignedInfo and sign it.
-        $signedInfoC14n = $signedInfo->C14N(false, false);
+        $signedInfoC14n = $signedInfo->C14N(true, false);
         openssl_sign($signedInfoC14n, $signatureValue, $key, OPENSSL_ALGO_SHA256);
 
         $sigValue = $doc->createElementNS(self::NS_DSIG, 'ds:SignatureValue');
@@ -205,14 +206,14 @@ class XadesSigner
         foreach ($nodes as $node) {
             $node->parentNode->removeChild($node);
         }
-        $c14n = $clone->documentElement->C14N(false, false);
+        $c14n = $clone->documentElement->C14N(true, false);
 
         return base64_encode(hash('sha256', $c14n, true));
     }
 
     private function digestOfNode(DOMElement $node): string
     {
-        return base64_encode(hash('sha256', $node->C14N(false, false), true));
+        return base64_encode(hash('sha256', $node->C14N(true, false), true));
     }
 
     private function formatDn(array $issuer): string
