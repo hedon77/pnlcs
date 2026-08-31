@@ -61,7 +61,7 @@ final class KsefSettings
     {
         $s = self::resolve();
 
-        return filled($s['nip']) && filled($s['private_key']);
+        return filled($s['nip']) && filled($s['private_key']) && filled($s['certificate']);
     }
 
     private static function endpoint(string $environment): string

@@ -4,6 +4,7 @@ namespace Modules\Ksef;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Ksef\Support\InvoiceXmlBuilder;
+use Modules\Ksef\Support\XadesSigner;
 
 class KsefServiceProvider extends ServiceProvider
 {
@@ -12,8 +13,12 @@ class KsefServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/config/ksef.php', 'ksef');
 
         $this->app->singleton(InvoiceXmlBuilder::class);
+        $this->app->singleton(XadesSigner::class);
 
-        $this->app->singleton(KsefClient::class, fn ($app) => new KsefClient($app->make(InvoiceXmlBuilder::class)));
+        $this->app->singleton(KsefClient::class, fn ($app) => new KsefClient(
+            $app->make(InvoiceXmlBuilder::class),
+            $app->make(XadesSigner::class),
+        ));
 
         $this->app->singleton(KsefService::class, function ($app) {
             return new KsefService(

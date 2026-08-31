@@ -17,10 +17,9 @@ return [
         'prod' => 'https://api.ksef.mf.gov.pl/v2',
     ],
 
-    // KSeF 2.0 authenticates with a certificate issued by the MCU module
-    // (qualified electronic seal / signature), NOT the KSeF 1.0 token. The
-    // private key and certificate are pasted into the addon settings (stored
-    // encrypted); the key signs the authorisation challenge.
+    // KSeF 2.0 authenticates with a qualified seal / signature (XAdES) using
+    // the MCU certificate. The private key and certificate are pasted into the
+    // addon settings (stored encrypted).
     'private_key' => null,
     'private_key_passphrase' => null,
     'certificate' => null,
