@@ -224,14 +224,15 @@ class KsefClient
                 ->throw()
                 ->json();
 
-            $code = (string) ($status['status'] ?? '');
+            $code = (int) ($status['status']['code'] ?? 0);
 
-            if ($code === 'Active') {
+            if ($code === 200) {
                 return;
             }
 
-            if ($code === 'Failed' || $code === 'Revoked') {
-                throw new \RuntimeException(__('messages.ksef.auth_failed'));
+            if ($code >= 400) {
+                $description = (string) ($status['status']['description'] ?? '');
+                throw new \RuntimeException(__('messages.ksef.auth_failed').($description !== '' ? ': '.$description : ''));
             }
 
             sleep(1);
