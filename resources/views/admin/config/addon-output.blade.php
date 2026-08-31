@@ -9,7 +9,7 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
         <span style="font-size:12px;color:var(--pn-muted);">v{{ $addon->getVersion() }} by {{ $addon->getAuthor() }}</span>
-        <a href="{{ route('admin.config.addons') }}" class="btn btn-sm btn-outline">{{ __('admin.nav.back') }}</a>
+        <a href="{{ route('admin.config.addons.modules') }}" class="btn btn-sm btn-outline">{{ __('admin.nav.back') }}</a>
     </div>
 </div>
 
