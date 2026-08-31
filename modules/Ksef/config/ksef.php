@@ -10,12 +10,11 @@ return [
     //   - prod:        production, real invoices.
     'environment' => 'integration',
 
-    // KSeF 2.0 API endpoints. Verify the exact hosts against the official
-    // OpenAPI contract (ksef.podatki.gov.pl → wsparcie dla integratorów).
+    // KSeF 2.0 API endpoints (official hosts from the OpenAPI contract).
     'endpoints' => [
-        'integration' => 'https://ksef-test.mf.gov.pl/api',
-        'demo' => 'https://ksef-demo.mf.gov.pl/api',
-        'prod' => 'https://ksef.mf.gov.pl/api',
+        'integration' => 'https://api-test.ksef.mf.gov.pl/v2',
+        'demo' => 'https://api-demo.ksef.mf.gov.pl/v2',
+        'prod' => 'https://api.ksef.mf.gov.pl/v2',
     ],
 
     // KSeF 2.0 authenticates with a certificate issued by the MCU module
