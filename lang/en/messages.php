@@ -456,6 +456,7 @@ return [
     'ksef.sent' => 'Invoice handed to KSeF.',
     'ksef.test' => 'Test connection',
     'ksef.test_ok' => 'Connection to the KSeF API works.',
+    'ksef.auth_failed' => 'KSeF authentication failed — check the NIP and key.',
     'ksef.addon_output_hint' => 'Paid invoices are handed to KSeF automatically. Below is the submission status.',
     'ksef.queued' => 'The invoice has been queued for KSeF submission.',
 ];

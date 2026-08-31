@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Ksef\Http\Admin\KsefController;
 
-Route::middleware(['admin.auth', 'admin.2fa', 'admin.permission:manage_invoices'])
+Route::middleware(['admin.auth', 'admin.2fa', 'admin.permission:manage_products'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

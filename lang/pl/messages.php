@@ -445,6 +445,8 @@ return [
     'ksef.private_key_hint' => 'Wklej klucz prywatny pieczęci/podpisu kwalifikowanego (PEM) z MCU. Jest przechowywany szyfrowanie i nigdy nie opuszcza backendu.',
     'ksef.cert_path' => 'Ścieżka certyfikatu',
     'ksef.cert_path_hint' => 'Ścieżka do certyfikatu (opcjonalne).',
+    'ksef.certificate' => 'Certyfikat (PEM)',
+    'ksef.certificate_hint' => 'Wklej certyfikat (PEM) pieczęci/podpisu kwalifikowanego z MCU. Przechowywany szyfrowanie.',
     'ksef.connect_timeout' => 'Timeout połączenia (sekundy)',
     'ksef.request_timeout' => 'Timeout żądania (sekundy)',
     'ksef.missing_token' => 'Brak tokenu KSeF — skonfiguruj poświadczenia API w ustawieniach dodatku.',
@@ -456,6 +458,7 @@ return [
     'ksef.sent' => 'Faktura przekazana do KSeF.',
     'ksef.test' => 'Test połączenia',
     'ksef.test_ok' => 'Połączenie z API KSeF działa.',
+    'ksef.auth_failed' => 'Uwierzytelnienie w KSeF nie powiodło się — sprawdź NIP i klucz.',
     'ksef.addon_output_hint' => 'Opłacone faktury są automatycznie przekazywane do KSeF. Poniżej status wysyłek.',
     'ksef.queued' => 'Faktura została zakolejkowana do wysyłki do KSeF.',
 ];

@@ -27,7 +27,8 @@ class KsefClient
     public function __construct(protected InvoiceXmlBuilder $xml) {}
 
     /**
-     * Lightweight connectivity check against the configured KSeF endpoint.
+     * Test the connection and credentials by running the KSeF 2.0
+     * authentication exchange (challenge → sign → token).
      *
      * @return array{success: bool, message: string}
      */
@@ -40,18 +41,13 @@ class KsefClient
         }
 
         try {
-            $endpoint = rtrim((string) $settings['endpoint'], '/');
+            $token = $this->authenticate($settings);
 
-            $response = Http::accept('application/json')
-                ->timeout((int) $settings['http']['request_timeout'])
-                ->connectTimeout((int) $settings['http']['connect_timeout'])
-                ->get($endpoint.'/api/status');
-
-            if ($response->successful()) {
-                return ['success' => true, 'message' => __('messages.ksef.test_ok')];
+            if ($token === '') {
+                return ['success' => false, 'message' => __('messages.ksef.auth_failed')];
             }
 
-            return ['success' => false, 'message' => __('messages.ksef.http_error', ['code' => $response->status()])];
+            return ['success' => true, 'message' => __('messages.ksef.test_ok')];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
