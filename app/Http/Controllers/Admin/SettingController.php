@@ -18,15 +18,27 @@ class SettingController extends Controller
     {
         $settings = Setting::where('group', 'general')->pluck('value', 'setting');
 
+        $invoiceService = app(\App\Services\InvoiceService::class);
+        $proformaFormat = trim((string) ($settings['ProformaNumberFormat'] ?? 'PRO-{year}/{month}-{num}'));
+        $proformaFormat = $proformaFormat !== '' ? $proformaFormat : 'PRO-{year}/{month}-{num}';
+        $proformaLast = \App\Models\Invoice::where('invoice_num', 'like', 'PRO-%')->orderBy('id', 'desc')->value('invoice_num');
+        $proformaSeq = 1 + (int) \App\Models\Invoice::where('invoice_num', 'like', 'PRO-%')
+            ->selectRaw('MAX(CAST(REGEXP_REPLACE(invoice_num, "^.*[^0-9]", "") AS UNSIGNED)) as seq')
+            ->value('seq');
+
         return view('admin.settings.general', [
             'settings' => $settings,
             'mailTransport' => (string) config('mail.default'),
             'languages' => Language::active()->orderBy('sort_order')->get(),
             'countries' => \App\Support\Countries::all(),
             'paymentMethods' => $this->paymentMethods(),
-            'invoicePreview' => app(\App\Services\InvoiceService::class)->generateInvoiceNumber(),
-            'invoiceNextSeq' => app(\App\Services\InvoiceService::class)->nextInvoiceSequence(),
+            'invoicePreview' => $invoiceService->generateInvoiceNumber(),
+            'invoiceNextSeq' => $invoiceService->nextInvoiceSequence(),
             'invoiceLast' => \App\Models\Invoice::where('invoice_num', '!=', '')->orderBy('id', 'desc')->value('invoice_num'),
+            'proformaEnabled' => ($settings['ProformaEnabled'] ?? '0') === '1',
+            'proformaFormat' => $proformaFormat,
+            'proformaPreview' => $invoiceService->renderInvoiceNumber($proformaFormat, $proformaSeq),
+            'proformaLast' => $proformaLast,
         ]);
     }
 
@@ -64,6 +76,7 @@ class SettingController extends Controller
         'DefaultNameserver1', 'DefaultNameserver2', 'DefaultNameserver3', 'DefaultNameserver4', 'DefaultNameserver5',
         'Email', 'EmailFromName',
         'InvoiceNumberFormat', 'InvoiceNumberYearlyReset', 'InvoiceDueDays',
+        'ProformaEnabled', 'ProformaNumberFormat',
         'AutoSuspensionDays', 'AutoTerminationDays', 'AutoTerminationEnabled',
         'FraudLabsApiKey', 'FraudLabsEnabled',
         'MaxMindAccountId', 'MaxMindEnabled', 'MaxMindLicenseKey',
@@ -88,6 +101,9 @@ class SettingController extends Controller
         }
         if (! isset($data['InvoiceNumberYearlyReset'])) {
             $data['InvoiceNumberYearlyReset'] = '0';
+        }
+        if (! isset($data['ProformaEnabled'])) {
+            $data['ProformaEnabled'] = '0';
         }
         if (! isset($data['AutoTerminationEnabled'])) {
             $data['AutoTerminationEnabled'] = '0';

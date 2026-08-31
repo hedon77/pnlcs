@@ -48,6 +48,11 @@ class KsefService
             return null;
         }
 
+        // Only VAT invoices go to KSeF — a proforma is never submitted.
+        if (($invoice->type ?? 'vat') !== 'vat') {
+            return null;
+        }
+
         $record = KsefInvoice::firstOrCreate(
             ['invoice_id' => $invoice->id],
             ['status' => 'pending'],

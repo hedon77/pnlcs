@@ -37,7 +37,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Invoice::with('client');
+        $query = Invoice::with('client')->excludeSettledProformas();
 
         // The list opens on the Unpaid view (which includes overdue invoices).
         $status = (string) $request->input('status', 'unpaid');
@@ -416,7 +416,7 @@ class InvoiceController extends Controller
      */
     public function exportCsv(Request $request): StreamedResponse
     {
-        $query = Invoice::with('client');
+        $query = Invoice::with('client')->excludeSettledProformas();
 
         if ($request->filled('status')) {
             $status = (string) $request->status;
