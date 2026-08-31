@@ -73,6 +73,7 @@ class XadesSigner
 
         // Re-sign now that the SignedInfo is complete with its digest values.
         $signedInfoC14n = $signedInfo->C14N(true, false);
+        file_put_contents('/tmp/ksef_signed_c14n.txt', $signedInfoC14n);
         openssl_sign($signedInfoC14n, $raw, $key, OPENSSL_ALGO_SHA256);
         $sigValue = $doc->createElementNS(self::NS_DSIG, 'ds:SignatureValue');
         $sigValue->nodeValue = base64_encode($this->formatSignature($raw, $key));
