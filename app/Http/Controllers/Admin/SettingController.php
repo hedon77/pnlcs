@@ -76,7 +76,7 @@ class SettingController extends Controller
         'DefaultNameserver1', 'DefaultNameserver2', 'DefaultNameserver3', 'DefaultNameserver4', 'DefaultNameserver5',
         'Email', 'EmailFromName',
         'InvoiceNumberFormat', 'InvoiceNumberYearlyReset', 'InvoiceDueDays',
-        'ProformaEnabled', 'ProformaNumberFormat',
+        'ProformaEnabled', 'ProformaNumberFormat', 'HidePaidProformas',
         'AutoSuspensionDays', 'AutoTerminationDays', 'AutoTerminationEnabled',
         'FraudLabsApiKey', 'FraudLabsEnabled',
         'MaxMindAccountId', 'MaxMindEnabled', 'MaxMindLicenseKey',
@@ -104,6 +104,9 @@ class SettingController extends Controller
         }
         if (! isset($data['ProformaEnabled'])) {
             $data['ProformaEnabled'] = '0';
+        }
+        if (! isset($data['HidePaidProformas'])) {
+            $data['HidePaidProformas'] = '0';
         }
         if (! isset($data['AutoTerminationEnabled'])) {
             $data['AutoTerminationEnabled'] = '0';
