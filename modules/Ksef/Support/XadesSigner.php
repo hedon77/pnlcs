@@ -72,8 +72,7 @@ class XadesSigner
         $signature->appendChild($signedInfo);
 
         // Re-sign now that the SignedInfo is complete with its digest values.
-        $signedInfoC14n = $signedInfo->C14N(true, false);
-        file_put_contents('/tmp/ksef_signed_c14n.txt', $signedInfoC14n);
+        $signedInfoC14n = $this->c14nDetached($signedInfo);
         openssl_sign($signedInfoC14n, $raw, $key, OPENSSL_ALGO_SHA256);
         $sigValue = $doc->createElementNS(self::NS_DSIG, 'ds:SignatureValue');
         $sigValue->nodeValue = base64_encode($this->formatSignature($raw, $key));
@@ -251,10 +250,16 @@ class XadesSigner
     /** Digest of a detached element (re-parented into a temp document for C14N). */
     private function digestOfDetached(DOMElement $node): string
     {
+        return base64_encode(hash('sha256', $this->c14nDetached($node), true));
+    }
+
+    /** Exclusive C14N of a detached element (needs a temp document). */
+    private function c14nDetached(DOMElement $node): string
+    {
         $temp = new DOMDocument();
         $temp->appendChild($temp->importNode($node, true));
 
-        return base64_encode(hash('sha256', $temp->documentElement->C14N(true, false), true));
+        return $temp->documentElement->C14N(true, false);
     }
 
     private function formatDn(array $issuer): string
