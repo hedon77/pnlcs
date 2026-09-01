@@ -33,7 +33,7 @@
                 <label class="form-label" for="current_password">{{ __('common.form.current_password') }}<span class="req">*</span></label>
                 <div style="display:flex;gap:6px;">
                     <input type="password" id="current_password" name="current_password" required class="form-control">
-                    <button type="button" onclick="togglePw('current_password')" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.toggle') }}">&#128065;</button>
+                    <button type="button" onclick="togglePw('current_password')" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.actions.toggle') }}">&#128065;</button>
                 </div>
             </div>
             <div class="form-group">
@@ -41,8 +41,8 @@
                 <div style="display:flex;gap:6px;">
                     <input type="password" id="password" name="password" required class="form-control" oninput="checkStrength(this.value)" placeholder="{{ __('client.password.min_chars') }}">
                     <button type="button" onclick="generatePw()" class="btn btn-default" style="white-space:nowrap;flex-shrink:0;" title="{{ __('admin.clients.generate_password') }}">&#128273;</button>
-                    <button type="button" onclick="copyPw('password', this)" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.copy') }}">&#128203;</button>
-                    <button type="button" onclick="togglePw('password')" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.toggle') }}">&#128065;</button>
+                    <button type="button" onclick="copyPw('password', this)" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.actions.copy') }}">&#128203;</button>
+                    <button type="button" onclick="togglePw('password')" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.actions.toggle') }}">&#128065;</button>
                 </div>
                 <div class="pw-strength"><div class="pw-strength-bar" id="pwBar"></div></div>
                 <div class="pw-hint text-muted" id="pwHint">{{ __("client.password.enter_new") }}</div>
@@ -51,7 +51,7 @@
                 <label class="form-label" for="password_confirmation">{{ __('client.password.confirm_new') }} <span class="req">*</span></label>
                 <div style="display:flex;gap:6px;">
                     <input type="password" id="password_confirmation" name="password_confirmation" required class="form-control">
-                    <button type="button" onclick="togglePw('password_confirmation')" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.toggle') }}">&#128065;</button>
+                    <button type="button" onclick="togglePw('password_confirmation')" class="btn btn-default" style="flex-shrink:0;" title="{{ __('common.actions.toggle') }}">&#128065;</button>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">{{ __('client.password.update_btn') }}</button>

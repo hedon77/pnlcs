@@ -2,8 +2,8 @@
 
 return [
     'account' => [
-        'billing_email_hint' => 'Faturalar için isteğe bağlı e-posta (örn. muhasebe departmanı). Boşsa giriş adresi kullanılır.',
         'email_change_needs_password' => 'Bu adresi değiştirmek için hesap şifrenizi girmeniz gerekmektedir.',
+        'billing_email_hint' => 'Faturalar için isteğe bağlı e-posta (örn. muhasebe departmanı). Boşsa giriş adresi kullanılır.',
         'current_password' => 'Mevcut şifre',
         'account_switched' => 'Artık :name\'i görüntülüyorsunuz.',
         'accounts' => 'Hesaplarınız',
@@ -30,10 +30,6 @@ return [
     'actions.warning' => 'Warning',
     'add_funds' => 'Bakiye Yükle',
     'affiliates' => [
-        'credited' => 'Yatırıldı',
-        'commission' => 'Komisyon',
-        'add_to_balance_desc' => 'Ortaklık kazancınızı hizmet ödemek için hesap bakiyenize aktarın.',
-        'add_to_balance' => 'Bakiyeye Ekle',
         'join_title' => 'Ortaklık programına katılın',
         'join_desc' => 'Bize gönderdiğiniz müşterilerin harcadığı miktarın bir kısmını kazanın.',
         'join_button' => 'Programa katılın',
@@ -41,6 +37,10 @@ return [
         'withdraw_desc' => 'Bakiye ödemesi talep edin. Ödeyebileceğimiz en küçük miktar :minimum\'dur.',
         'amount' => 'miktar',
         'activate' => 'Activate Ortaklik Account',
+        'add_to_balance' => 'Bakiyeye Ekle',
+        'add_to_balance_desc' => 'Ortaklık kazancınızı hizmet ödemek için hesap bakiyenize aktarın.',
+        'commission' => 'Komisyon',
+        'credited' => 'Yatırıldı',
         'available_balance' => 'Mevcut Bakiye',
         'commission_history' => 'Komisyon Gecmis',
         'commission_rate' => 'Komisyon Oran',
@@ -467,7 +467,7 @@ return [
         'subtitle' => 'Add credit to your account for future purchases.',
         'title' => 'Add Funds',
     ],
-    'funds.amount_range' => 'Minimum $5.00, maximum $10,000.00',
+    'funds.amount_range' => 'Minimum :min, maksimum :max',
     'funds.available_credit_desc' => 'Available for invoices and purchases.',
     'funds.bank_transfer' => 'Bank Transfer',
     'funds.current_credit' => 'Current Credit Balance',

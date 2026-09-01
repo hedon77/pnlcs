@@ -90,7 +90,6 @@ return [
         'no_results' => 'Sonuc bulunamadi.',
     ],
     'form' => [
-        'billing_email' => 'Fatura E-postası (Muhasebe)',
         'address' => 'Ekleress',
         'address1' => 'Ekleress Line 1',
         'address2' => 'Ekleress Line 2',
@@ -106,6 +105,7 @@ return [
         'description' => 'Description',
         'email' => 'Email',
         'email_address' => 'Email Address',
+        'billing_email' => 'Fatura E-postası (Muhasebe)',
         'first_name' => 'First Name',
         'group' => 'Grup',
         'language' => 'Dil',
@@ -190,8 +190,6 @@ return [
         'urgent' => 'Urgent',
     ],
     'status' => [
-        'payment_pending' => 'Ödeme Bekliyor',
-        'partially_paid' => 'Kısmen Ödendi',
         'accepted' => 'Accepted',
         'active' => 'Active',
         'answered' => 'Answered',
@@ -214,6 +212,8 @@ return [
         'open' => 'Open',
         'overdue' => 'Overdue',
         'paid' => 'Paid',
+        'partially_paid' => 'Kısmen Ödendi',
+        'payment_pending' => 'Ödeme Bekliyor',
         'pending' => 'Pending',
         'refunded' => 'Iade Edildi',
         'resolved' => 'Resolved',

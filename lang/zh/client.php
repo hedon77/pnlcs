@@ -2,8 +2,8 @@
 
 return [
     'account' => [
-        'billing_email_hint' => '发票的可选邮箱（例如财务部门）。为空时使用登录地址。',
         'email_change_needs_password' => '更改此地址需要输入账户密码。',
+        'billing_email_hint' => '发票的可选邮箱（例如财务部门）。为空时使用登录地址。',
         'current_password' => '当前密码',
         'account_switched' => '您当前正在查看 :name。',
         'accounts' => '您的账户',
@@ -30,10 +30,6 @@ return [
     'actions.warning' => '警告',
     'add_funds' => '充值',
     'affiliates' => [
-        'credited' => '已入账',
-        'commission' => '佣金',
-        'add_to_balance_desc' => '将推广收益转入账户余额以支付服务。',
-        'add_to_balance' => '添加到余额',
         'join_title' => '加入联盟推广计划',
         'join_desc' => '您推荐的客户消费后，您可获得相应佣金。',
         'join_button' => '加入计划',
@@ -41,6 +37,10 @@ return [
         'withdraw_desc' => '申请提取账户余额，最低提现金额为 :minimum。',
         'amount' => '金额',
         'activate' => '启用联盟推广账户',
+        'add_to_balance' => '添加到余额',
+        'add_to_balance_desc' => '将推广收益转入账户余额以支付服务。',
+        'commission' => '佣金',
+        'credited' => '已入账',
         'available_balance' => '可用余额',
         'commission_history' => '佣金记录',
         'commission_rate' => '佣金比例',
@@ -467,7 +467,7 @@ return [
         'subtitle' => '为账户余额充值。',
         'title' => '充值',
     ],
-    'funds.amount_range' => '最低 5.00 美元 · 最高 10,000.00 美元',
+    'funds.amount_range' => '最低 :min · 最高 :max',
     'funds.available_credit_desc' => '可用于支付发票和订单。',
     'funds.bank_transfer' => '银行转账',
     'funds.current_credit' => '当前账户余额',
