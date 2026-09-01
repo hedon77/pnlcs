@@ -90,6 +90,7 @@ return [
         'no_results' => 'Sonuc bulunamadi.',
     ],
     'form' => [
+        'billing_email' => 'Fatura E-postası (Muhasebe)',
         'address' => 'Ekleress',
         'address1' => 'Ekleress Line 1',
         'address2' => 'Ekleress Line 2',
@@ -189,6 +190,8 @@ return [
         'urgent' => 'Urgent',
     ],
     'status' => [
+        'payment_pending' => 'Ödeme Bekliyor',
+        'partially_paid' => 'Kısmen Ödendi',
         'accepted' => 'Accepted',
         'active' => 'Active',
         'answered' => 'Answered',

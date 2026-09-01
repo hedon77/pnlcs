@@ -90,6 +90,7 @@ return [
         'no_results' => '未找到结果。',
     ],
     'form' => [
+        'billing_email' => '账单邮箱（财务）',
         'address' => '地址',
         'address1' => '地址行 1',
         'address2' => '地址行 2',
@@ -189,6 +190,8 @@ return [
         'urgent' => '紧急',
     ],
     'status' => [
+        'payment_pending' => '待付款',
+        'partially_paid' => '部分付款',
         'accepted' => '已接受',
         'active' => '已启用',
         'answered' => '已回复',

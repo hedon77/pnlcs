@@ -2,6 +2,7 @@
 
 return [
     'account' => [
+        'billing_email_hint' => 'Faturalar için isteğe bağlı e-posta (örn. muhasebe departmanı). Boşsa giriş adresi kullanılır.',
         'email_change_needs_password' => 'Bu adresi değiştirmek için hesap şifrenizi girmeniz gerekmektedir.',
         'current_password' => 'Mevcut şifre',
         'account_switched' => 'Artık :name\'i görüntülüyorsunuz.',
@@ -29,6 +30,10 @@ return [
     'actions.warning' => 'Warning',
     'add_funds' => 'Bakiye Yükle',
     'affiliates' => [
+        'credited' => 'Yatırıldı',
+        'commission' => 'Komisyon',
+        'add_to_balance_desc' => 'Ortaklık kazancınızı hizmet ödemek için hesap bakiyenize aktarın.',
+        'add_to_balance' => 'Bakiyeye Ekle',
         'join_title' => 'Ortaklık programına katılın',
         'join_desc' => 'Bize gönderdiğiniz müşterilerin harcadığı miktarın bir kısmını kazanın.',
         'join_button' => 'Programa katılın',
@@ -449,7 +454,6 @@ return [
     'form.optional' => 'optional',
     'funds' => [
         'add_amount' => 'Tutar to Ekle',
-        'amount_range' => 'Minimum $5.00, maximum $10,000.00',
         'available_credit_desc' => 'Available for invoices and purchases.',
         'current_balance' => 'Mevcut Bakiye',
         'current_credit' => 'Current Credit Balance',
