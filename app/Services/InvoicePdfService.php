@@ -375,8 +375,9 @@ class InvoicePdfService
 
     /**
      * A payment QR code as an inline <img>, from the bank-transfer module's
-     * first bank: the Polish ZBP "Przyjazny Przelew" payload for a Polish
-     * account (NRB), the EPC SEPA payload otherwise. Empty when no bank is set.
+     * first bank. A Polish customer pays by the Polish ZBP "Przyjazny Przelew"
+     * payload (an NRB); anyone else by the EPC SEPA payload (an IBAN). Empty
+     * when no bank is set.
      */
     public function paymentQr(Invoice $invoice): string
     {
@@ -391,14 +392,23 @@ class InvoicePdfService
         }
         $iban = (string) ($bank['iban'] ?? '');
         $account = (string) ($bank['account_number'] ?? '');
+        $swift = (string) ($bank['swift'] ?? '');
 
         if ($holder === '') {
             return '';
         }
 
-        $payload = $this->isPolishAccount($iban, $account)
-            ? $this->zbpPayload($holder, $this->nrb($account !== '' ? $account : $iban), $invoice)
-            : $this->epcPayload($holder, $iban, (string) ($bank['swift'] ?? ''), $invoice);
+        $nrb = $this->nrb($account !== '' ? $account : $iban);
+        $polishPayer = strtoupper((string) $invoice->buyer('country')) === 'PL';
+
+        $payload = '';
+        if ($polishPayer && $nrb !== '') {
+            $payload = $this->zbpPayload($holder, $nrb, $invoice);
+        }
+
+        if ($payload === '' && $iban !== '') {
+            $payload = $this->epcPayload($holder, $iban, $swift, $invoice);
+        }
 
         if ($payload === '') {
             return '';
@@ -409,31 +419,18 @@ class InvoicePdfService
         return $uri !== '' ? '<img src="'.$uri.'" alt="">' : '';
     }
 
-    /** A Polish account is a 26-digit NRB or a PL-prefixed IBAN. */
-    protected function isPolishAccount(string $iban, string $account): bool
-    {
-        if ($account !== '') {
-            return preg_match('/^\d{26}$/', $account) === 1;
-        }
-
-        return str_starts_with(strtoupper($iban), 'PL');
-    }
-
-    /** The 26-digit NRB, whether from an NRB or a PL-prefixed IBAN. */
+    /** The 26-digit NRB from an NRB or a PL-prefixed IBAN; '' when foreign. */
     protected function nrb(string $ibanOrAccount): string
     {
         $digits = preg_replace('/\D/', '', $ibanOrAccount) ?? '';
+        $digits = strlen($digits) === 28 ? substr($digits, 2) : $digits;
 
-        return strlen($digits) === 28 ? substr($digits, 2) : $digits;
+        return preg_match('/^\d{26}$/', $digits) === 1 ? $digits : '';
     }
 
     /** The Polish ZBP ("Przyjazny Przelew") payload: pipe-delimited fields. */
     protected function zbpPayload(string $holder, string $account, Invoice $invoice): string
     {
-        if ($account === '') {
-            return '';
-        }
-
         $name = mb_substr($holder, 0, 20);
         $amount = number_format((float) $invoice->amountDue(), 2, ',', '');
         $title = mb_substr((string) ($invoice->invoice_num ?? $invoice->id), 0, 32);
