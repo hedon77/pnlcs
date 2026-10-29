@@ -3,7 +3,7 @@
 use App\Models\Admin;
 use App\Models\AdminRole;
 use App\Models\Client;
-use App\Models\GatewaySettings;
+use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Setting;
@@ -136,13 +136,14 @@ it('uses the uploaded template only while one is selected and present', function
 
 it('builds the items table from the invoice line items', function () {
     $client = Client::factory()->create();
-    $invoice = Invoice::factory()->create(['client_id' => $client->id]);
+    Currency::factory()->create(['code' => 'PLN', 'prefix' => '', 'suffix' => ' zł', 'format' => 1]);
+    $invoice = Invoice::factory()->create(['client_id' => $client->id, 'source_currency' => 'PLN']);
     InvoiceItem::factory()->create(['invoice_id' => $invoice->id, 'client_id' => $client->id, 'description' => 'Hosting Pro', 'qty' => 1, 'amount' => 10]);
 
     $service = app(InvoicePdfService::class);
     $html = $service->placeholderVars($invoice)['items'];
 
-    expect($html)->toContain('Hosting Pro')->toContain('<table');
+    expect($html)->toContain('Hosting Pro')->toContain('<table')->toContain('10.00 zł');
 });
 
 it('refuses an upload that is not an HTML document', function () {
