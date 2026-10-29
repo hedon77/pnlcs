@@ -51,18 +51,34 @@ it('resolves conditional blocks against the placeholder value', function () {
         ->toBe('A[Some note]B[unpaid]CD');
 });
 
-it('renders a payment QR for a configured bank and none without one', function () {
+it('picks the payment QR account by the customer country', function () {
+    Setting::set('Country', 'PL', 'general');
+
+    // Slot 0 in the company currency (PLN), slot 1 in EUR.
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'account_name'], ['value' => '24 Box Igor Rybicki']);
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'bank_name'], ['value' => 'Nest Bank']);
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'iban'], ['value' => 'PL 63 2530 0008 2096 1022 3191 0001']);
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'bank2_name'], ['value' => 'EUR Bank']);
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'bank2_iban'], ['value' => 'DE89370400440532013000']);
+
+    $service = app(InvoicePdfService::class);
+
+    $pl = Invoice::factory()->create(['client_id' => Client::factory()->create(['country' => 'PL'])->id, 'invoice_num' => 'INV-1']);
+    $de = Invoice::factory()->create(['client_id' => Client::factory()->create(['country' => 'DE'])->id, 'invoice_num' => 'INV-2']);
+    $us = Invoice::factory()->create(['client_id' => Client::factory()->create(['country' => 'US'])->id, 'invoice_num' => 'INV-3']);
+
+    // Local -> first account (ZBP), SEPA -> second (EPC), elsewhere -> none.
+    expect($service->placeholderVars($pl)['payment_qr'])->toStartWith('<img src="data:image/png;base64,')
+        ->and($service->placeholderVars($de)['payment_qr'])->toStartWith('<img src="data:image/png;base64,')
+        ->and($service->placeholderVars($us)['payment_qr'])->toBe('');
+});
+
+it('renders no payment QR when no bank is configured', function () {
     $service = app(InvoicePdfService::class);
     $client = Client::factory()->create(['country' => 'PL']);
     $invoice = Invoice::factory()->create(['client_id' => $client->id, 'invoice_num' => 'INV-1']);
 
     expect($service->placeholderVars($invoice)['payment_qr'])->toBe('');
-
-    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'account_name'], ['value' => '24 Box Igor Rybicki']);
-    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'bank_name'], ['value' => 'Nest Bank']);
-    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'iban'], ['value' => 'PL 63 2530 0008 2096 1022 3191 0001']);
-
-    expect($service->placeholderVars($invoice)['payment_qr'])->toStartWith('<img src="data:image/png;base64,');
 });
 
 it('builds a ZBP payload for Polish customers and an EPC payload otherwise', function () {
