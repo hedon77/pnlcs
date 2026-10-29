@@ -470,6 +470,7 @@ class InvoicePdfService
             return '';
         }
 
+        $iban = strtoupper((string) preg_replace('/\s+/', '', $iban));
         $name = mb_substr($holder, 0, 70);
         $amount = number_format($this->eurAmount($invoice), 2, '.', '');
         $title = mb_substr((string) ($invoice->invoice_num ?? $invoice->id), 0, 35);
