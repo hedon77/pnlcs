@@ -3,6 +3,7 @@
 use App\Models\Admin;
 use App\Models\AdminRole;
 use App\Models\Client;
+use App\Models\GatewaySettings;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Setting;
@@ -48,6 +49,36 @@ it('resolves conditional blocks against the placeholder value', function () {
 
     expect($service->merge($template, $vars))
         ->toBe('A[Some note]B[unpaid]CD');
+});
+
+it('renders a payment QR for a configured bank and none without one', function () {
+    $service = app(InvoicePdfService::class);
+    $client = Client::factory()->create(['country' => 'PL']);
+    $invoice = Invoice::factory()->create(['client_id' => $client->id, 'invoice_num' => 'INV-1']);
+
+    expect($service->placeholderVars($invoice)['payment_qr'])->toBe('');
+
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'account_name'], ['value' => '24 Box Igor Rybicki']);
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'bank_name'], ['value' => 'Nest Bank']);
+    GatewaySettings::updateOrCreate(['gateway' => 'banktransfer', 'setting' => 'iban'], ['value' => 'PL 63 2530 0008 2096 1022 3191 0001']);
+
+    expect($service->placeholderVars($invoice)['payment_qr'])->toStartWith('<img src="data:image/png;base64,');
+});
+
+it('builds a ZBP payload for Polish customers and an EPC payload otherwise', function () {
+    $service = app(InvoicePdfService::class);
+    $invoice = Invoice::factory()->create(['invoice_num' => 'INV-1', 'total' => 123.45]);
+
+    $nrb = (new ReflectionMethod($service, 'nrb'))->invoke($service, 'PL 63 2530 0008 2096 1022 3191 0001');
+    expect($nrb)->toBe('63253000082096102231910001');
+
+    $zbp = (new ReflectionMethod($service, 'zbpPayload'))->invoke($service, '24 Box Igor Rybicki', '63253000082096102231910001', $invoice);
+    expect($zbp)->toStartWith('|24 Box Igor Rybicki|63253000082096102231910001|')
+        ->toContain('INV-1');
+
+    $epc = (new ReflectionMethod($service, 'epcPayload'))->invoke($service, '24 Box Igor Rybicki', 'PL63253000082096102231910001', 'NESBPLPW', $invoice);
+    expect($epc)->toStartWith("BCD\n002\n1\nSCT\nNESBPLPW\n24 Box Igor Rybicki\n")
+        ->toContain('INV-1');
 });
 
 it('uses the uploaded template only while one is selected and present', function () {
