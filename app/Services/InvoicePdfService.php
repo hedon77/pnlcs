@@ -386,6 +386,9 @@ class InvoicePdfService
         }
 
         $holder = (string) ($bank['holder'] ?? '');
+        if ($holder === '') {
+            $holder = company_name();
+        }
         $iban = (string) ($bank['iban'] ?? '');
         $account = (string) ($bank['account_number'] ?? '');
 
