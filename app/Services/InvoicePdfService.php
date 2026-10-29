@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\TaxRule;
 use App\Services\AddonManager;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Modules\Gateways\BankTransfer\BankTransferModule;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoicePdfService
@@ -240,6 +241,7 @@ class InvoicePdfService
         $ksef ??= $this->ksefInfo($invoice);
         $vars['ksef_number'] = e((string) ($ksef['number'] ?? ''));
         $vars['ksef_qr'] = ! empty($ksef['qr']) ? '<img src="'.e((string) $ksef['qr']).'" alt="">' : '';
+        $vars['payment_qr'] = $this->paymentQr($invoice);
 
         return $vars;
     }
@@ -367,8 +369,87 @@ class InvoicePdfService
             'client_tax_id', 'client_email',
             'invoice_number', 'invoice_date', 'due_date', 'date_paid', 'status',
             'payment_method', 'subtotal', 'tax', 'tax2', 'credit', 'total', 'notes',
-            'items', 'ksef_number', 'ksef_qr',
+            'items', 'ksef_number', 'ksef_qr', 'payment_qr',
         ];
+    }
+
+    /**
+     * A payment QR code as an inline <img>, from the bank-transfer module's
+     * first bank: the Polish ZBP "Przyjazny Przelew" payload for a Polish
+     * account (NRB), the EPC SEPA payload otherwise. Empty when no bank is set.
+     */
+    public function paymentQr(Invoice $invoice): string
+    {
+        $bank = (new BankTransferModule)->firstBank();
+        if ($bank === null) {
+            return '';
+        }
+
+        $holder = (string) ($bank['holder'] ?? '');
+        $iban = (string) ($bank['iban'] ?? '');
+        $account = (string) ($bank['account_number'] ?? '');
+
+        if ($holder === '') {
+            return '';
+        }
+
+        $payload = $this->isPolishAccount($iban, $account)
+            ? $this->zbpPayload($holder, $this->nrb($account !== '' ? $account : $iban), $invoice)
+            : $this->epcPayload($holder, $iban, (string) ($bank['swift'] ?? ''), $invoice);
+
+        if ($payload === '') {
+            return '';
+        }
+
+        $uri = $this->qrDataUri($payload);
+
+        return $uri !== '' ? '<img src="'.$uri.'" alt="">' : '';
+    }
+
+    /** A Polish account is a 26-digit NRB or a PL-prefixed IBAN. */
+    protected function isPolishAccount(string $iban, string $account): bool
+    {
+        if ($account !== '') {
+            return preg_match('/^\d{26}$/', $account) === 1;
+        }
+
+        return str_starts_with(strtoupper($iban), 'PL');
+    }
+
+    /** The 26-digit NRB, whether from an NRB or a PL-prefixed IBAN. */
+    protected function nrb(string $ibanOrAccount): string
+    {
+        $digits = preg_replace('/\D/', '', $ibanOrAccount) ?? '';
+
+        return strlen($digits) === 28 ? substr($digits, 2) : $digits;
+    }
+
+    /** The Polish ZBP ("Przyjazny Przelew") payload: pipe-delimited fields. */
+    protected function zbpPayload(string $holder, string $account, Invoice $invoice): string
+    {
+        if ($account === '') {
+            return '';
+        }
+
+        $name = mb_substr($holder, 0, 20);
+        $amount = number_format((float) $invoice->amountDue(), 2, ',', '');
+        $title = mb_substr((string) ($invoice->invoice_num ?? $invoice->id), 0, 32);
+
+        return '|'.$name.'|'.$account.'|'.$amount.'|'.$title.'|';
+    }
+
+    /** The EPC SEPA payload (BCD tag), one field per line. */
+    protected function epcPayload(string $holder, string $iban, string $swift, Invoice $invoice): string
+    {
+        if ($iban === '') {
+            return '';
+        }
+
+        $name = mb_substr($holder, 0, 70);
+        $amount = number_format((float) $invoice->amountDue(), 2, '.', '');
+        $title = mb_substr((string) ($invoice->invoice_num ?? $invoice->id), 0, 35);
+
+        return "BCD\n002\n1\nSCT\n{$swift}\n{$name}\n{$iban}\nEUR{$amount}\n\n\n{$title}\n";
     }
 
     /**

@@ -98,6 +98,24 @@ class BankTransferModule implements GatewayModuleInterface
         return $banks;
     }
 
+    /**
+     * The first enabled bank with the shared account holder, for a payment QR
+     * code on an invoice.
+     *
+     * @return array{holder: string, name: string, iban: string, account_number: string, swift: string}|null
+     */
+    public function firstBank(): ?array
+    {
+        $bank = $this->banks()[0] ?? null;
+        if ($bank === null) {
+            return null;
+        }
+
+        $bank["holder"] = trim((string) $this->getSetting("account_name"));
+
+        return $bank;
+    }
+
     public function capture(Invoice $invoice, float $amount, array $params = []): array
     {
         return [
